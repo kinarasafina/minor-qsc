@@ -1,4 +1,6 @@
 # Byte-compiled / optimized / DLL files
+sender_privkey.pem
+receiver_privkey.pem
 __pycache__/
 *.py[codz]
 *$py.class
