@@ -1,16 +1,17 @@
 # KEY-GEN
+import time
 import numpy as np
 from numpy.polynomial import polynomial as p
 
 
-n = 10 # polynomial degree, so highest is x^3
+n = 10  # polynomial degree, so highest is x^3
 # q = 12289
 # q = 31
-q = 1023 # 2^n - 1 <- q change to prime p
+q = 1023  # 2^n - 1 <- q change to prime p
 
 # modulus
 xN_1 = [1] + [0] * (n - 1) + [1]
-print(xN_1)  # x^4 + 0x^3 + 0x^2 + 0x + 1
+# print(xN_1)  # x^4 + 0x^3 + 0x^2 + 0x + 1
 
 
 def gen_poly(n, q):
@@ -27,64 +28,75 @@ def gen_poly(n, q):
     return poly
 
 
+# KEY GENERATION
+start_key_gen = time.perf_counter()
 A = np.floor(np.random.random(size=(n)) * q)
 A = np.floor(p.polydiv(A, xN_1)[1])  # [1] = taking the remainder value
 A = A % q
-print(A)
+# print(A)
 
 # ----ALICE-----
-print("----ALICE-----")
+# print("----ALICE-----")
 eA = gen_poly(n, q)
-print(eA)
+# print(eA)
 sA = gen_poly(n, q)
-print(sA)
+# print(sA)
 
 # Alice now creates bA = (A x sA) + eA
-bA = p.polymul(A,sA)
-bA = p.polyadd(bA,eA)
-bA = np.floor(p.polydiv(bA,xN_1)[1])%q
-print(bA)
+bA = p.polymul(A, sA)
+bA = p.polyadd(bA, eA)
+bA = np.floor(p.polydiv(bA, xN_1)[1]) % q
+# print(bA)
 
-#----BOB-----
-print("----BOB-----")
-sB = gen_poly(n,q)
-print(sB)
-eB = gen_poly(n,q)
-print(eB)
+# ----BOB-----
+# print("----BOB-----")
+sB = gen_poly(n, q)
+# print(sB)
+eB = gen_poly(n, q)
+# print(eB)
 
-bB = p.polymul(A,sB)
-bB = p.polyadd(bB,eB)
-bB = np.floor(p.polydiv(bB,xN_1)[1])%q
-print(bB)
+bB = p.polymul(A, sB)
+bB = p.polyadd(bB, eB)
+bB = np.floor(p.polydiv(bB, xN_1)[1]) % q
+# print(bB)
 
-public_key_Alice = (A,bA)
+public_key_Alice = (A, bA)
 public_key_Bob = (A, bB)
+stop_key_gen = time.perf_counter()
 
+print(f"Key generation time: {(stop_key_gen - start_key_gen) * 1000}")
+
+start_enc_dec = time.perf_counter()
 # ENCRYPTION
 k = 200
 
+
 def string_to_bits(s):
-    return [int(bit) for byte in s.encode("utf-8")
-                     for bit in format(byte, "08b")]
+    return [int(bit) for byte in s.encode("utf-8") for bit in format(byte, "08b")]
+
 
 def bits_to_string(bits):
     chars = []
     for i in range(0, len(bits), 8):
-        byte = bits[i:i+8]
+        byte = bits[i : i + 8]
         if len(byte) < 8:
-            break  
+            break
         chars.append(chr(int("".join(str(b) for b in byte), 2)))
     return "".join(chars)
 
-message = 'hi'
+
+message = "hi"
 m = string_to_bits(message)
-print(m)
+# print(m)
+
 
 def chunk_bits(bits, n):
-    return [bits[i:i+n] for i in range(0, len(bits), n)]
+    return [bits[i : i + n] for i in range(0, len(bits), n)]
+
 
 blocks = chunk_bits(m, n)
-print(blocks)
+# print(blocks)
+
 
 def bits_to_poly(bits, n):
     poly = np.zeros(n, dtype=int)
@@ -92,17 +104,19 @@ def bits_to_poly(bits, n):
         poly[i] = bits[i]
     return poly
 
+
 def encode_message(m, q):
     return np.array((q // 2) * m)
 
-r = gen_poly(n,q)
-e1 = gen_poly(n,q)
-e2 = gen_poly(n,q)
+
+r = gen_poly(n, q)
+e1 = gen_poly(n, q)
+e2 = gen_poly(n, q)
 
 ciphertext = []
 for block in blocks:
     m_poly = bits_to_poly(block, n)
-    encoded_m = encode_message(m_poly,q)
+    encoded_m = encode_message(m_poly, q)
     # print('m_poly:',m_poly)
     # print(encoded_m)
 
@@ -117,31 +131,38 @@ for block in blocks:
 
     ct = (v, w)
     ciphertext.append(ct)
-#print(ciphertext)
+# print(ciphertext)
 
 # DECRYPTION
+
 
 def decode_message(poly, q):
     bits = []
     for c in poly:
-        if q/4 < c < 3*q/4:
+        if q / 4 < c < 3 * q / 4:
             bits.append(1)
         else:
             bits.append(0)
     return bits
 
-def decryption(v,w,q,s):
+
+def decryption(v, w, q, s):
     recovered = p.polymul(v, s)
     recovered = np.floor(p.polydiv(recovered, xN_1)[1]) % q
     recovered = (w - recovered) % q
     bits = decode_message(recovered, q)
     return bits
 
+
 plaintext = []
 for ct in ciphertext:
-    v,w = ct
-    bits = decryption(v,w,q,sB)
+    v, w = ct
+    bits = decryption(v, w, q, sB)
     plaintext.extend(bits)
 
-print(plaintext)
-print(bits_to_string(plaintext))
+# print(plaintext)
+bits_to_string(plaintext)
+
+stop_enc_dec = time.perf_counter()
+
+print(f"Encrypt Decrypt Time: {(stop_enc_dec - start_enc_dec) * 1000}")
