@@ -43,7 +43,7 @@ def bits_to_poly(bits, n):
         return poly
 
 def encode_message(m, q):
-    return np.array((q // 2) * m)
+    return np.array([(q // 2) * int(mi) for mi in m], dtype=object)
 
 def decode_message(poly, q):
         bits = []
