@@ -5,6 +5,7 @@ from numpy.polynomial import polynomial as p
 
 
 deg = [128, 256, 512]  # polynomial degree, so highest is x^3
+q_list = [7681, 3329, 12289]
 # q = 12289
 # q = 31
 
@@ -61,8 +62,8 @@ def decryption(v, w, q, s):
     bits = decode_message(recovered, q)
     return bits
 
-for n in deg:
-    q = 2**n - 1
+for i, n in enumerate(deg):
+    q = q_list[i]
     # modulus
     xN_1 = [1] + [0] * (n - 1) + [1]
     # print(xN_1)  # x^4 + 0x^3 + 0x^2 + 0x + 1
@@ -148,7 +149,7 @@ for n in deg:
         plaintext.extend(bits)
 
     # print(plaintext)
-    bits_to_string(plaintext)
+    print(bits_to_string(plaintext))
 
     stop_enc_dec = time.perf_counter()
 
