@@ -13,10 +13,13 @@ def gen_poly(xN_1, n, q):
     poly = np.floor(np.random.normal(l, size=(n)))
     poly = np.floor(p.polydiv(poly, xN_1)[1] % q)
 
-    if len(poly) < n:
-        poly = np.pad(poly, (n - len(poly), 0))
-    else:
-        poly = poly[:n]
+    while poly[0] == 0:
+        poly[0] = np.floor(np.random.normal(l))
+
+    # if len(poly) < n:
+    #     poly = np.pad(poly, (n - len(poly), 0))
+    # else:
+    #     poly = poly[:n]
 
     return poly
 
@@ -61,7 +64,7 @@ def decode_message(poly, q):
 
 
 def decryption(xN_1, v, w, q, s):
-    recovered = p.polymul(v, s)
+    recovered = p.polymul(v, s) 
     recovered = np.floor(p.polydiv(recovered, xN_1)[1]) % q
     recovered = (w - recovered) % q
     bits = decode_message(recovered, q)
@@ -115,27 +118,27 @@ def main():
                 start_enc_dec = time.perf_counter()
                 
                 # ENCRYPTION
-                data = {
-                    "msgID": "bsm",
-                    "msgCnt": 42,
-                    "id": "A9B8C7D6",
-                    "secMark": 54321,
-                    "pos": {"lat": 34.0522, "long": -118.2437, "elev": 85.3},
-                    "accuracy": {"semiMajor": 2, "semiMinor": 1},
-                    "motion": {
-                        "speed": 22.5,
-                        "heading": 180.0,
-                        "steeringWheelAngle": 2,
-                    },
-                    "brakes": {
-                        "wheelBrakes": "0000",
-                        "abs": "unavailable",
-                        "traction": "on",
-                    },
-                    "size": {"width": 185, "length": 480},
-                }
+                # data = {
+                #     "msgID": "bsm",
+                #     "msgCnt": 42,
+                #     "id": "A9B8C7D6",
+                #     "secMark": 54321,
+                #     "pos": {"lat": 34.0522, "long": -118.2437, "elev": 85.3},
+                #     "accuracy": {"semiMajor": 2, "semiMinor": 1},
+                #     "motion": {
+                #         "speed": 22.5,
+                #         "heading": 180.0,
+                #         "steeringWheelAngle": 2,
+                #     },
+                #     "brakes": {
+                #         "wheelBrakes": "0000",
+                #         "abs": "unavailable",
+                #         "traction": "on",
+                #     },
+                #     "size": {"width": 185, "length": 480},
+                # }
 
-                message = json.dumps(data, separators=(",", ":"))
+                message = json.dumps('hi', separators=(",", ":"))
                 m = string_to_bits(message)
 
                 blocks = chunk_bits(m, n)
