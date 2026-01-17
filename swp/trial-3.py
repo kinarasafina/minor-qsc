@@ -3,6 +3,7 @@ import time
 import numpy as np
 from numpy.polynomial import polynomial as p
 from memory_profiler import memory_usage
+import cProfile
 from ntt_c import polymul_ntt
 
 def is_primitive_root(u, q, factors):
@@ -207,16 +208,16 @@ def main():
                     bits = decryption(xN_1, v, w, q, sB, primitive_root)
                     plaintext.extend(bits)
 
-                bits_to_string(plaintext) # print this to see the decrypted message
+                final_text = bits_to_string(plaintext) # print this to see the decrypted message
 
                 stop_enc_dec = time.perf_counter()
                 encdec_time = stop_enc_dec - start_enc_dec
 
-                return keygen_time, encdec_time
+                return keygen_time, encdec_time, final_text
 
             mem_usage = memory_usage(run_once, interval=0.01)
             avg_mem_peak += max(mem_usage)
-            k_time, e_time = run_once()
+            k_time, e_time, final_text = run_once()
             avg_keygen += k_time
             avg_encdec += e_time
 
@@ -224,6 +225,7 @@ def main():
         avg_encdec /= num_runs
         avg_mem_peak /= num_runs
 
+        print(f'Decrypted text: {final_text}')
         print(f"Avg keygen time: {(avg_keygen * 1000):.2f} ms")
         print(f"Avg encrypt/decrypt time: {(avg_encdec * 1000):.2f} ms")
         print(f"Avg peak memory: {avg_mem_peak:.2f} MiB")
@@ -231,3 +233,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    # cProfile.run("main()", sort="cumtime")
