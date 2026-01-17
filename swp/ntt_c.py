@@ -64,4 +64,4 @@ start_time = time.perf_counter()
 c_pm = np.polymul(a, b) % q
 end_time = time.perf_counter()
 
-print(f'{(end_time - start_time)*1000} ms')
+print(f'{(end_time - start_time)*1000} ms')   

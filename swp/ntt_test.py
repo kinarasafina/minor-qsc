@@ -4,6 +4,7 @@ from sympy.discrete.convolutions import convolution_ntt
 from sympy import isprime, nextprime
 import time
 from final_LWE_normal import gen_poly
+from ntt_c import polymul_ntt
 
 # n = 512
 # q = 12289
@@ -51,9 +52,39 @@ from final_LWE_normal import gen_poly
 # a = [1, 3, 7, 9, 5, 7, 11, 15, 8, 8]
 # b = [9, 1, 2, 3, 4, 2, 3, 7, 6]
 
+def is_primitive_root(u, q, factors):
+    phi = q - 1
+    for p in factors:
+        # check u^(phi/p) mod q != 1
+        if pow(u, phi // p, q) == 1:
+            return False
+    return True
+
+def find_primitive_root(q, factors):
+    for u in range(2, q):
+        if is_primitive_root(u, q, factors):
+            return u
+    return None
+
+def primes(n):
+    prime_factors = []
+    d = 2
+
+    while d * d <= n:
+        if n % d == 0:
+            prime_factors.append(d)
+            while n % d == 0:
+                n //= d
+        d += 1
+
+    if n > 1 and n not in prime_factors:
+        prime_factors.append(n)
+
+    return prime_factors
+
 # Given parameters
-deg = 4096
-Q = 40961
+deg = 128
+Q = 7681
 
 xN_1 = [1] + [0] * (deg - 1) + [1]
 
@@ -62,6 +93,10 @@ b = gen_poly(xN_1, deg, Q).astype(int).tolist()
 
 print(a)
 print(b)
+# print(len(a))
+# print(len(b))
+
+prim_root = find_primitive_root(Q, primes(Q - 1))
 
 len_c = ((len(a) - 1) + (len(b) - 1)) + 1
 
@@ -72,20 +107,20 @@ while True:
     if 2**n > len_c:
         break
 
-print(n)
+# print(n)
 
 N = 2**n
 # ------- finding prime q ----------
-start = N * len(a) * len(b) + 1
-q = nextprime(start - 1)  # ensure q >= start
+# start = N * len(a) * len(b) + 1
+# q = nextprime(start - 1)  # ensure q >= start
 
-while True:
-    if (q - 1) % N == 0:
-        k = (q - 1) // N
-        break
-    q = nextprime(q)
+# while True:
+#     if (q - 1) % N == 0:
+#         k = (q - 1) // N
+#         break
+#     q = nextprime(q)
 
-print('q:', q)
+# print('q:', q)
 
 # ---- NTT ----
 start = time.perf_counter()
@@ -100,7 +135,13 @@ c_np = np.polymul(a, b) % Q
 end = time.perf_counter()
 
 print("NumPy time (ms):", (end - start) * 1000)
-print(len(c_ntt), len(c_np))
+
+# ------- NTT with c --------
+start = time.perf_counter()
+c_nttC = polymul_ntt(a,b,Q,prim_root)
+end = time.perf_counter()
+print("Ntt with C time (ms):", (end - start) * 1000)
+
 # ---- Compare ----
 print("Match:", np.all(c_ntt == c_np))
-
+print("Match:", np.all(c_ntt == c_nttC))
