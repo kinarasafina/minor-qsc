@@ -46,22 +46,22 @@ def polymul_ntt(a, b, q, root):
 
     return result[:len_c]
 
-q = 577
-root = 5     # primitive root for Kyber
+# q = 577
+# root = 5     # primitive root for Kyber
 
 # n = 6
 
-a = [1, 3, 7, 9, 5, 7]
-b = [9, 1, 2, 3, 4, 2]
+# a = [1, 3, 7, 9, 5, 7]
+# b = [9, 1, 2, 3, 4, 2]
 
-start_time = time.perf_counter()
-c_ntt = polymul_ntt(a,b,q,root)
-end_time = time.perf_counter()
+# start_time = time.perf_counter()
+# c_ntt = polymul_ntt(a,b,q,root)
+# end_time = time.perf_counter()
 
-print(f'{(end_time - start_time)*1000} ms')
+# print(f'{(end_time - start_time)*1000} ms')
 
-start_time = time.perf_counter()
-c_pm = np.polymul(a, b) % q
-end_time = time.perf_counter()
+# start_time = time.perf_counter()
+# c_pm = np.polymul(a, b) % q
+# end_time = time.perf_counter()
 
-print(f'{(end_time - start_time)*1000} ms')   
+# print(f'{(end_time - start_time)*1000} ms')   

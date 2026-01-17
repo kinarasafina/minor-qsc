@@ -6,6 +6,7 @@ import time
 from final_LWE_normal import gen_poly
 from ntt_c import polymul_ntt
 
+
 # n = 512
 # q = 12289
 # xN_1 = [1] + [0] * (n - 1) + [1]
@@ -83,8 +84,8 @@ def primes(n):
     return prime_factors
 
 # Given parameters
-deg = 128
-Q = 7681
+deg = 512
+Q = 12289
 
 xN_1 = [1] + [0] * (deg - 1) + [1]
 

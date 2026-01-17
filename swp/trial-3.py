@@ -3,25 +3,37 @@ import time
 import numpy as np
 from numpy.polynomial import polynomial as p
 from memory_profiler import memory_usage
+from ntt_c import polymul_ntt
 
-deg = [128, 256, 512]  # polynomial degree, so highest is x^3
-q_list = [7681, 3329, 12289]
-num_runs = 20
+def is_primitive_root(u, q, factors):
+    phi = q - 1
+    for p in factors:
+        # check u^(phi/p) mod q != 1
+        if pow(u, phi // p, q) == 1:
+            return False
+    return True
 
-# def gen_poly(xN_1, n, q):
-#     l = 0  # Gamma Distribution Location (Mean "center" of dist.)
-#     poly = np.floor(np.random.normal(l, size=(n)))
-#     poly = np.floor(p.polydiv(poly, xN_1)[1] % q)
+def find_primitive_root(q, factors):
+    for u in range(2, q):
+        if is_primitive_root(u, q, factors):
+            return u
+    return None
 
-#     while poly[0] == 0:
-#         poly[0] = np.floor(np.random.normal(l))
+def primes(n):
+    prime_factors = []
+    d = 2
 
-#     # if len(poly) < n:
-#     #     poly = np.pad(poly, (n - len(poly), 0))
-#     # else:
-#     #     poly = poly[:n]
+    while d * d <= n:
+        if n % d == 0:
+            prime_factors.append(d)
+            while n % d == 0:
+                n //= d
+        d += 1
 
-#     return poly
+    if n > 1 and n not in prime_factors:
+        prime_factors.append(n)
+
+    return prime_factors
 
 def gen_poly(xN_1, n, q):
     l = 0
@@ -41,6 +53,7 @@ def gen_poly(xN_1, n, q):
         rem[0] = int(np.floor(np.random.normal(l)))
 
     return rem
+
 
 def string_to_bits(s):
     return [int(bit) for byte in s.encode("utf-8") for bit in format(byte, "08b")]
@@ -80,20 +93,25 @@ def decode_message(poly, q):
             bits.append(0)
     return bits
 
-
-def decryption(xN_1, v, w, q, s):
-    recovered = p.polymul(v, s) 
+def decryption(xN_1, v, w, q, s, root):
+    recovered = polymul_ntt(v,s, q ,root) #p.polymul(v, s) 
     recovered = np.floor(p.polydiv(recovered, xN_1)[1]) % q
     recovered = (w - recovered) % q
     bits = decode_message(recovered, q)
     return bits
 
+deg = [128, 256, 512]  # polynomial degree, so highest is x^3
+q_list = [3329, 7681, 12289]
+num_runs = 20
 
 def main():
     for i, n in enumerate(deg):
         q = q_list[i]
         print(f"\nRunning degree={n}, q={q}, {num_runs} iterations")
 
+        prime_factors = primes(n)
+        primitive_root = find_primitive_root(q,prime_factors)
+        
         avg_keygen = 0
         avg_encdec = 0
         avg_mem_peak = 0
@@ -115,7 +133,7 @@ def main():
                 sA = gen_poly(xN_1, n, q)
 
                 # Alice now creates bA = (A x sA) + eA
-                bA = p.polymul(A, sA)
+                bA = polymul_ntt(A, sA, q, primitive_root) #p.polymul(A, sA)
                 bA = p.polyadd(bA, eA)
                 bA = np.floor(p.polydiv(bA, xN_1)[1]) % q
 
@@ -123,7 +141,7 @@ def main():
                 sB = gen_poly(xN_1, n, q)
                 eB = gen_poly(xN_1, n, q)
 
-                bB = p.polymul(A, sB)
+                bB = polymul_ntt(A, sB, q, primitive_root) #p.polymul(A, sB)
                 bB = p.polyadd(bB, eB)
                 bB = np.floor(p.polydiv(bB, xN_1)[1]) % q
 
@@ -170,11 +188,11 @@ def main():
                     m_poly = bits_to_poly(block, n)
                     encoded_m = encode_message(m_poly, q)
 
-                    v = p.polymul(A, r)
+                    v = polymul_ntt(A, r, q, primitive_root) #p.polymul(A, r)
                     v = p.polyadd(v, e1)
                     v = np.floor(p.polydiv(v, xN_1)[1]) % q
 
-                    w = p.polymul(bB, r)
+                    w = polymul_ntt(bB, r, q, primitive_root) #p.polymul(bB, r)
                     w = p.polyadd(w, e2)
                     w = p.polyadd(w, encoded_m)
                     w = np.floor(p.polydiv(w, xN_1)[1]) % q
@@ -186,18 +204,18 @@ def main():
                 plaintext = []
                 for ct in ciphertext:
                     v, w = ct
-                    bits = decryption(xN_1, v, w, q, sB)
+                    bits = decryption(xN_1, v, w, q, sB, primitive_root)
                     plaintext.extend(bits)
 
-                print(bits_to_string(plaintext)) # print this to see the decrypted message
+                bits_to_string(plaintext) # print this to see the decrypted message
 
                 stop_enc_dec = time.perf_counter()
                 encdec_time = stop_enc_dec - start_enc_dec
 
                 return keygen_time, encdec_time
 
-            # mem_usage = memory_usage(run_once, interval=0.01)
-            # avg_mem_peak += max(mem_usage)
+            mem_usage = memory_usage(run_once, interval=0.01)
+            avg_mem_peak += max(mem_usage)
             k_time, e_time = run_once()
             avg_keygen += k_time
             avg_encdec += e_time
