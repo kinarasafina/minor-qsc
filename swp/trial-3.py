@@ -1,3 +1,4 @@
+#trial-3.py -> using polymul_ntt() written in C
 import json
 import time
 import numpy as np
@@ -110,7 +111,7 @@ def main():
         q = q_list[i]
         print(f"\nRunning degree={n}, q={q}, {num_runs} iterations")
 
-        prime_factors = primes(n)
+        prime_factors = primes(q-1)
         primitive_root = find_primitive_root(q,prime_factors)
         
         avg_keygen = 0
@@ -121,6 +122,7 @@ def main():
 
             def run_once():
                 # modulus
+                delay = np.random.randint(1, 5 + 1)
                 xN_1 = [1] + [0] * (n - 1) + [1]
 
                 # KEY GENERATION
@@ -146,36 +148,36 @@ def main():
                 bB = p.polyadd(bB, eB)
                 bB = np.floor(p.polydiv(bB, xN_1)[1]) % q
 
-                public_key_Alice = (A, bA)
-                public_key_Bob = (A, bB)
+                # public_key_Alice = (A, bA)
+                # public_key_Bob = (A, bB)
 
                 stop_key_gen = time.perf_counter()
                 keygen_time = stop_key_gen - start_key_gen
-
+                
                 start_enc_dec = time.perf_counter()
                 
                 # ENCRYPTION
-                # data = {
-                #     "msgID": "bsm",
-                #     "msgCnt": 42,
-                #     "id": "A9B8C7D6",
-                #     "secMark": 54321,
-                #     "pos": {"lat": 34.0522, "long": -118.2437, "elev": 85.3},
-                #     "accuracy": {"semiMajor": 2, "semiMinor": 1},
-                #     "motion": {
-                #         "speed": 22.5,
-                #         "heading": 180.0,
-                #         "steeringWheelAngle": 2,
-                #     },
-                #     "brakes": {
-                #         "wheelBrakes": "0000",
-                #         "abs": "unavailable",
-                #         "traction": "on",
-                #     },
-                #     "size": {"width": 185, "length": 480},
-                # }
+                data = {
+                    "msgID": "bsm",
+                    "msgCnt": 42,
+                    "id": "A9B8C7D6",
+                    "secMark": 54321,
+                    "pos": {"lat": 34.0522, "long": -118.2437, "elev": 85.3},
+                    "accuracy": {"semiMajor": 2, "semiMinor": 1},
+                    "motion": {
+                        "speed": 22.5,
+                        "heading": 180.0,
+                        "steeringWheelAngle": 2,
+                    },
+                    "brakes": {
+                        "wheelBrakes": "0000",
+                        "abs": "unavailable",
+                        "traction": "on",
+                    },
+                    "size": {"width": 185, "length": 480},
+                }
 
-                message = json.dumps('hi', separators=(",", ":"))
+                message = json.dumps(data, separators=(",", ":"))
                 m = string_to_bits(message)
 
                 blocks = chunk_bits(m, n)
@@ -201,6 +203,8 @@ def main():
                     ct = (v, w)
                     ciphertext.append(ct)
 
+                # time.sleep(delay/1000)
+
                 # DECRYPTION
                 plaintext = []
                 for ct in ciphertext:
@@ -215,8 +219,8 @@ def main():
 
                 return keygen_time, encdec_time, final_text
 
-            mem_usage = memory_usage(run_once, interval=0.01)
-            avg_mem_peak += max(mem_usage)
+            # mem_usage = memory_usage(run_once, interval=0.01)
+            # avg_mem_peak += max(mem_usage)
             k_time, e_time, final_text = run_once()
             avg_keygen += k_time
             avg_encdec += e_time

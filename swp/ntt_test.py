@@ -4,7 +4,7 @@ from sympy.discrete.convolutions import convolution_ntt
 from sympy import isprime, nextprime
 import time
 from final_LWE_normal import gen_poly
-from ntt_c import polymul_ntt
+from ntt_c import polymul_ntt, polymul_ntt_optim
 
 
 # n = 512
@@ -92,25 +92,26 @@ xN_1 = [1] + [0] * (deg - 1) + [1]
 a = gen_poly(xN_1, deg, Q).astype(int).tolist()
 b = gen_poly(xN_1, deg, Q).astype(int).tolist()
 
-print(a)
-print(b)
+# print(a)
+# print(b)
 # print(len(a))
 # print(len(b))
 
-prim_root = find_primitive_root(Q, primes(Q - 1))
+# prim_root = find_primitive_root(Q, primes(Q - 1))
+prim_root = 11
 
 len_c = ((len(a) - 1) + (len(b) - 1)) + 1
 
 # ------- finding n ----------
-n = 0
-while True:
-    n += 1
-    if 2**n > len_c:
-        break
+# n = 0
+# while True:
+#     n += 1
+#     if 2**n > len_c:
+#         break
 
 # print(n)
 
-N = 2**n
+# N = 2**n
 # ------- finding prime q ----------
 # start = N * len(a) * len(b) + 1
 # q = nextprime(start - 1)  # ensure q >= start
@@ -143,6 +144,13 @@ c_nttC = polymul_ntt(a,b,Q,prim_root)
 end = time.perf_counter()
 print("Ntt with C time (ms):", (end - start) * 1000)
 
+# ------- NTT with c optim--------
+start = time.perf_counter()
+c_nttC_optim = polymul_ntt_optim(a,b,Q,prim_root)
+end = time.perf_counter()
+print("Ntt with C optim time (ms):", (end - start) * 1000)
+
 # ---- Compare ----
 print("Match:", np.all(c_ntt == c_np))
 print("Match:", np.all(c_ntt == c_nttC))
+print("Match:", np.all(c_nttC == c_nttC_optim))
