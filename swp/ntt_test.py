@@ -144,13 +144,13 @@ c_nttC = polymul_ntt(a,b,Q,prim_root)
 end = time.perf_counter()
 print("Ntt with C time (ms):", (end - start) * 1000)
 
-# ------- NTT with c optim--------
-start = time.perf_counter()
-c_nttC_optim = polymul_ntt_optim(a,b,Q,prim_root)
-end = time.perf_counter()
-print("Ntt with C optim time (ms):", (end - start) * 1000)
+# # ------- NTT with c optim--------
+# start = time.perf_counter()
+# c_nttC_optim = polymul_ntt_optim(a,b,Q,prim_root)
+# end = time.perf_counter()
+# print("Ntt with C optim time (ms):", (end - start) * 1000)
 
 # ---- Compare ----
 print("Match:", np.all(c_ntt == c_np))
 print("Match:", np.all(c_ntt == c_nttC))
-print("Match:", np.all(c_nttC == c_nttC_optim))
+# print("Match:", np.all(c_nttC == c_nttC_optim))

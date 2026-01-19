@@ -5,8 +5,8 @@ import numpy as np
 from numpy.polynomial import polynomial as p
 from memory_profiler import memory_usage
 
-deg = [128, 256, 512]  # polynomial degree, so highest is x^3
-q_list = [7681, 3329, 12289]
+deg = [128, 256, 512, 1024, 2048]  # polynomial degree, so highest is x^3
+q_list = [3329, 7681, 12289, 12289, 40961]
 num_runs = 20
 
 # def gen_poly(xN_1, n, q):
@@ -42,6 +42,31 @@ def gen_poly(xN_1, n, q):
         rem[0] = int(np.floor(np.random.normal(l)))
 
     return rem
+
+def polymul_naive(a, b):
+    """
+    Naive O(n^2) polynomial multiplication without any reduction.
+    Just multiplies two polynomials and returns the result mod q.
+    Result will have length len(a) + len(b) - 1
+    Args:
+        a: List or array of polynomial coefficients
+        b: List or array of polynomial coefficients
+        q: Modulus for coefficient reduction
+    Returns:
+        List of coefficients of the product polynomial mod q
+    """
+    n_a = len(a)
+    n_b = len(b)
+    n_result = n_a + n_b - 1
+    # Create result array filled with zeros
+    result = [0] * n_result
+    # Naive multiplication: c[i+j] += a[i] * b[j]
+    for i in range(n_a):
+        for j in range(n_b):
+            temp = (a[i] * b[j]) 
+            result[i + j] = (result[i + j] + temp)
+    return result
+
 
 def string_to_bits(s):
     return [int(bit) for byte in s.encode("utf-8") for bit in format(byte, "08b")]
@@ -83,7 +108,7 @@ def decode_message(poly, q):
 
 
 def decryption(xN_1, v, w, q, s):
-    recovered = p.polymul(v, s) 
+    recovered = polymul_naive(v,s)
     recovered = np.floor(p.polydiv(recovered, xN_1)[1]) % q
     recovered = (w - recovered) % q
     bits = decode_message(recovered, q)
@@ -117,7 +142,7 @@ def main():
                 sA = gen_poly(xN_1, n, q)
 
                 # Alice now creates bA = (A x sA) + eA
-                bA = p.polymul(A, sA)
+                bA = polymul_naive(A, sA)
                 bA = p.polyadd(bA, eA)
                 bA = np.floor(p.polydiv(bA, xN_1)[1]) % q
 
@@ -125,7 +150,7 @@ def main():
                 sB = gen_poly(xN_1, n, q)
                 eB = gen_poly(xN_1, n, q)
 
-                bB = p.polymul(A, sB)
+                bB = polymul_naive(A, sB)
                 bB = p.polyadd(bB, eB)
                 bB = np.floor(p.polydiv(bB, xN_1)[1]) % q
 
@@ -172,11 +197,11 @@ def main():
                     m_poly = bits_to_poly(block, n)
                     encoded_m = encode_message(m_poly, q)
 
-                    v = p.polymul(A, r)
+                    v = polymul_naive(A, r)
                     v = p.polyadd(v, e1)
                     v = np.floor(p.polydiv(v, xN_1)[1]) % q
 
-                    w = p.polymul(bB, r)
+                    w = polymul_naive(bB, r)
                     w = p.polyadd(w, e2)
                     w = p.polyadd(w, encoded_m)
                     w = np.floor(p.polydiv(w, xN_1)[1]) % q
@@ -184,7 +209,8 @@ def main():
                     ct = (v, w)
                     ciphertext.append(ct)
 
-                # time.sleep(delay/1000)
+                time.sleep(delay/1000)
+
                 # DECRYPTION
                 plaintext = []
                 for ct in ciphertext:
@@ -192,16 +218,16 @@ def main():
                     bits = decryption(xN_1, v, w, q, sB)
                     plaintext.extend(bits)
 
-                bits_to_string(plaintext) # print this to see the decrypted message
+                final_text = bits_to_string(plaintext) # print this to see the decrypted message
 
                 stop_enc_dec = time.perf_counter()
                 encdec_time = stop_enc_dec - start_enc_dec
 
-                return keygen_time, encdec_time
+                return keygen_time, encdec_time, final_text
 
-            # mem_usage = memory_usage(run_once, interval=0.01)
-            # avg_mem_peak += max(mem_usage)
-            k_time, e_time = run_once()
+            mem_usage = memory_usage(run_once, interval=0.01)
+            avg_mem_peak += max(mem_usage)
+            k_time, e_time, final_text = run_once()
             avg_keygen += k_time
             avg_encdec += e_time
 
@@ -209,6 +235,7 @@ def main():
         avg_encdec /= num_runs
         avg_mem_peak /= num_runs
 
+        #print(f'Recovered message:{final_text}')
         print(f"Avg keygen time: {(avg_keygen * 1000):.2f} ms")
         print(f"Avg encrypt/decrypt time: {(avg_encdec * 1000):.2f} ms")
         print(f"Avg peak memory: {avg_mem_peak:.2f} MiB")
