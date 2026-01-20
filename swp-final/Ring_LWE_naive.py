@@ -1,4 +1,3 @@
-#final_LWE_normal.py -> using np.polymul()
 import cProfile
 import json
 import time
@@ -6,24 +5,9 @@ import numpy as np
 from numpy.polynomial import polynomial as p
 from memory_profiler import memory_usage
 
-deg = [128, 256, 512, 1024, 2048]  # polynomial degree, so highest is x^3
+deg = [128, 256, 512, 1024, 2048]
 q_list = [3329, 7681, 12289, 12289, 40961]
 num_runs = 20
-
-# def gen_poly(xN_1, n, q):
-#     l = 0  # Gamma Distribution Location (Mean "center" of dist.)
-#     poly = np.floor(np.random.normal(l, size=(n)))
-#     poly = np.floor(p.polydiv(poly, xN_1)[1] % q)
-
-#     while poly[0] == 0:
-#         poly[0] = np.floor(np.random.normal(l))
-
-#     # if len(poly) < n:
-#     #     poly = np.pad(poly, (n - len(poly), 0))
-#     # else:
-#     #     poly = poly[:n]
-
-#     return poly
 
 def gen_poly(xN_1, n, q):
     l = 0
@@ -241,7 +225,7 @@ def main():
         print(f"Avg peak memory: {avg_mem_peak:.2f} MiB")
 
 def run_once_profile():
-    n = 512 # polynomial degree, so highest is x^3
+    n = 512
     q = 12289
     delay = np.random.randint(1,5+1)
     # modulus
